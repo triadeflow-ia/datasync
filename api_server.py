@@ -3,7 +3,7 @@ Triadeflow DataSync API
 Flask server para validacao de dados
 """
 
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template_string
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import pandas as pd
@@ -14,6 +14,301 @@ from datetime import datetime
 import logging
 
 from contact_validator import ContactDataValidator
+
+# HTML Template para interface de upload
+UPLOAD_PAGE = '''
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triadeflow DataSync</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            color: #1a1a2e;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9fff9;
+        }
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .upload-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+        .upload-area h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .upload-area p {
+            color: #888;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .file-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .file-info.show {
+            display: block;
+        }
+        .file-info p {
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        .status.loading {
+            display: block;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .status.success {
+            display: block;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status.error {
+            display: block;
+            background: #ffebee;
+            color: #c62828;
+        }
+        .features {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .features h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .feature-item {
+            font-size: 12px;
+            color: #666;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>Triadeflow DataSync</h1>
+            <p>Validacao e formatacao de contatos para CRM</p>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-area" id="dropZone">
+                <div class="upload-icon">📁</div>
+                <h3>Arraste seu arquivo aqui</h3>
+                <p>ou clique para selecionar</p>
+                <p style="margin-top: 10px; font-size: 12px;">.xlsx ou .csv</p>
+                <input type="file" id="fileInput" name="file" accept=".xlsx,.xls,.csv">
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <p id="fileName"></p>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn" disabled>
+                Processar Arquivo
+            </button>
+        </form>
+
+        <div class="status" id="status"></div>
+
+        <div class="features">
+            <h4>O que este sistema faz:</h4>
+            <div class="feature-list">
+                <div class="feature-item">Valida emails</div>
+                <div class="feature-item">Formata telefones BR</div>
+                <div class="feature-item">Separa contatos</div>
+                <div class="feature-item">Gera IDs unicos</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const status = document.getElementById('status');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                updateFileInfo(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                updateFileInfo(e.target.files[0]);
+            }
+        });
+
+        function updateFileInfo(file) {
+            fileName.textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            fileInfo.classList.add('show');
+            submitBtn.disabled = false;
+        }
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span>Processando...';
+            status.className = 'status loading';
+            status.textContent = 'Validando e formatando seus contatos...';
+
+            try {
+                const response = await fetch('/validate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'contatos_validados.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    status.className = 'status success';
+                    status.textContent = 'Arquivo processado com sucesso! Download iniciado.';
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao processar arquivo');
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'Erro: ' + error.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Processar Arquivo';
+            }
+        });
+    </script>
+</body>
+</html>
+'''
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,12 +344,18 @@ def split_name(name):
 
 @app.route('/')
 def home():
+    return render_template_string(UPLOAD_PAGE)
+
+@app.route('/api')
+def api_info():
     return jsonify({
         'service': 'Triadeflow DataSync API',
         'version': '1.0.0',
         'status': 'online',
         'timestamp': datetime.now().isoformat(),
         'endpoints': {
+            'GET /': 'Interface de upload',
+            'GET /api': 'Info da API',
             'GET /health': 'Health check',
             'POST /validate': 'Validar e formatar contatos'
         }
