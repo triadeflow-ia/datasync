@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triadeflow DataSync - Validador de Contatos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #22c55e;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Upload Card */
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .upload-card h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .upload-card > p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(99, 102, 241, 0.02);
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .drop-zone-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(34, 197, 94, 0.2));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .drop-zone h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .file-types {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .file-type {
+            padding: 6px 14px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--primary);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* File Preview */
+        .file-preview {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+        }
+
+        .file-preview.show {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-preview-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--success);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .file-preview-info {
+            flex: 1;
+        }
+
+        .file-preview-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .file-preview-size {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 8px;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 25px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-btn .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Messages */
+        .status-message {
+            display: none;
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .status-message.loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--primary);
+        }
+
+        .status-message.success {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--success);
+        }
+
+        .status-message.error {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--error);
+        }
+
+        /* Features Card */
+        .features-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .features-card h2 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateX(5px);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h3 {
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* API Info */
+        .api-section {
+            margin-top: 60px;
+        }
+
+        .api-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .api-card h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .api-endpoint {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .api-method.get { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .api-method.post { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 80px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+            .nav-links {
+                display: none;
+            }
+            .main {
+                padding: 30px 20px;
+            }
+            .hero h1 {
+                font-size: 32px;
+            }
+            .upload-card, .features-card, .api-card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-sync-alt"></i></div>
+            <span class="logo-text">Triadeflow DataSync</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#upload">Upload</a>
+            <a href="#features">Recursos</a>
+            <a href="#api">API</a>
+        </nav>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Sistema Online
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <h1>Valide e formate seus <span>contatos</span> em segundos</h1>
+            <p>Upload de planilhas Excel ou CSV, validacao automatica de emails e telefones, pronto para importar no seu CRM.</p>
+        </section>
+
+        <section class="upload-section" id="upload">
+            <div class="upload-card">
+                <h2>Upload de Arquivo</h2>
+                <p>Arraste e solte seu arquivo ou clique para selecionar</p>
+
+                <form id="uploadForm">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <h3>Arraste seu arquivo aqui</h3>
+                        <p>ou clique para selecionar</p>
+                        <div class="file-types">
+                            <span class="file-type">.xlsx</span>
+                            <span class="file-type">.xls</span>
+                            <span class="file-type">.csv</span>
+                        </div>
+                        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv">
+                    </div>
+
+                    <div class="file-preview" id="filePreview">
+                        <div class="file-preview-icon"><i class="fas fa-file-excel"></i></div>
+                        <div class="file-preview-info">
+                            <div class="file-preview-name" id="fileName"></div>
+                            <div class="file-preview-size" id="fileSize"></div>
+                        </div>
+                        <button type="button" class="file-preview-remove" id="removeFile">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        <i class="fas fa-magic"></i>
+                        Processar Arquivo
+                    </button>
+                </form>
+
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <div class="features-card" id="features">
+                <h2>O que fazemos</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-envelope-check"></i></div>
+                        <div class="feature-content">
+                            <h3>Validacao de Emails</h3>
+                            <p>Verifica formato, separa multiplos emails e remove invalidos automaticamente.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-phone"></i></div>
+                        <div class="feature-content">
+                            <h3>Formatacao de Telefones</h3>
+                            <p>Converte para padrao brasileiro (+55) com DDD correto.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-id-card"></i></div>
+                        <div class="feature-content">
+                            <h3>Geracao de IDs</h3>
+                            <p>Cria identificadores unicos para contatos e oportunidades.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-file-export"></i></div>
+                        <div class="feature-content">
+                            <h3>Export para CRM</h3>
+                            <p>Formato compativel com GoHighLevel e outros CRMs.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="api-section" id="api">
+            <div class="api-card">
+                <h2>API Endpoints</h2>
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <span>/health</span>
+                    <span style="color: var(--text-secondary); margin-left: 20px;">Health check do servico</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method post">POST</span>
+                    <span>/validate</span>
+                    <span style="color: var(--text-secondary); margin-left: 20px;">Upload e validacao de arquivo</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <span>/api</span>
+                    <span style="color: var(--text-secondary); margin-left: 20px;">Informacoes da API</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Desenvolvido por <a href="#">Triadeflow</a> &copy; 2026</p>
+    </footer>
+
+    <script>
+        // API URL - Change this to your Render URL
+        const API_URL = 'https://datasync-ryus.onrender.com';
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeFile = document.getElementById('removeFile');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Drop zone events
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                showFilePreview(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                showFilePreview(e.target.files[0]);
+            }
+        });
+
+        function showFilePreview(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            filePreview.classList.add('show');
+            dropZone.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        removeFile.addEventListener('click', () => {
+            fileInput.value = '';
+            filePreview.classList.remove('show');
+            dropZone.style.display = 'block';
+            submitBtn.disabled = true;
+            statusMessage.className = 'status-message';
+        });
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div> Processando...';
+            statusMessage.className = 'status-message loading';
+            statusMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando e formatando seus contatos...';
+
+            try {
+                const response = await fetch(`${API_URL}/validate`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'contatos_validados.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    statusMessage.className = 'status-message success';
+                    statusMessage.innerHTML = '<i class="fas fa-check-circle"></i> Arquivo processado com sucesso! Download iniciado.';
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao processar arquivo');
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message error';
+                statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-magic"></i> Processar Arquivo';
+            }
+        });
+
+        // Check API status
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    document.querySelector('.status-badge').innerHTML = '<div class="status-dot"></div> Sistema Online';
+                }
+            } catch (error) {
+                document.querySelector('.status-badge').innerHTML = '<div class="status-dot" style="background: var(--error)"></div> Offline';
+            }
+        }
+
+        checkApiStatus();
+    </script>
+</body>
+</html>
