@@ -1,100 +1,87 @@
-# Triadeflow DataSync
+# FlowBase (datasync)
 
-Sistema profissional de validacao e enriquecimento de dados para CRM.
+Sistema profissional de validacao e enriquecimento de dados para CRM. Valida emails, formata telefones brasileiros (E.164), separa contatos multiplos e prepara dados para importacao no GoHighLevel.
 
-## Features
+## Stack
 
-- Validacao de Emails (regex, separacao de multiplos)
-- Formatacao de Telefones BR (+55 DDD)
-- Separacao de Contatos Multiplos
-- API REST pronta para integracao
-- Preparado para GoHighLevel e outros CRMs
+- **Backend**: Python 3.11, FastAPI, PostgreSQL, Redis + RQ
+- **Frontend**: Next.js 14, TypeScript, React 18
+- **Deploy**: Docker (Render)
 
-## Deploy no Railway
+## Funcionalidades (MVP Phase 1)
 
-1. Faca push deste repositorio para o GitHub
-2. Acesse [Railway](https://railway.app)
-3. Clique em **New Project** > **Deploy from GitHub repo**
-4. Selecione o repositorio `triadeflow-ia/datasync`
-5. O deploy sera automatico
+- Upload de planilhas XLSX/CSV
+- Mapeamento automatico de colunas (PT/EN)
+- Normalizacao de emails (lowercase, dedup)
+- Normalizacao de telefones (E.164, +55 BR)
+- Geracao de CSV formato GHL (12 colunas)
+- Preview dos dados (20 primeiras linhas)
+- Relatorio de metricas do processamento
+- Download do CSV processado
+- Autenticacao JWT (register + login)
+- Retry de jobs falhos
 
-### Variaveis de Ambiente (opcional)
-
-```
-DEFAULT_DDD=85
-```
-
-## API Endpoints
-
-### GET /
-Retorna informacoes do servico.
-
-### GET /health
-Health check para monitoramento.
-
-### POST /validate
-Valida e formata arquivo de contatos.
-
-**Request:**
-- `Content-Type: multipart/form-data`
-- `file`: Arquivo .xlsx ou .csv
-
-**Response:**
-- Arquivo CSV validado e formatado
-
-**Exemplo com curl:**
-```bash
-curl -X POST \
-  -F "file=@contatos.xlsx" \
-  https://seu-app.up.railway.app/validate \
-  -o resultado.csv
-```
-
-## Formato de Saida
-
-O CSV de saida contem as seguintes colunas:
-
-| Coluna | Descricao |
-|--------|-----------|
-| Contact ID | ID unico gerado |
-| Phone | Telefone principal formatado |
-| Email | Email principal validado |
-| First Name | Primeiro nome |
-| Last Name | Sobrenome |
-| Business Name | Nome da empresa |
-| Opportunity ID | ID da oportunidade |
-| Opportunity name | Nome da oportunidade |
-| Pipeline | Pipeline (Sales Pipeline) |
-| Stage | Estagio (New Lead) |
-| Source | Origem (DataSync API) |
-| Status | Status (Open) |
-| Additional Emails | Emails adicionais |
-| Additional Phones | Telefones adicionais |
-| Tags | Tags (DataSync Import) |
-
-## Estrutura do Projeto
+## Estrutura
 
 ```
 datasync/
-├── api_server.py         # Servidor Flask
-├── contact_validator.py  # Validador de contatos
-├── requirements.txt      # Dependencias Python
-├── railway.json          # Configuracao Railway
-└── README.md
+├── backend/
+│   ├── app/           # FastAPI application
+│   │   ├── main.py    # App entry point, routes
+│   │   ├── config.py  # Environment config
+│   │   ├── models.py  # SQLAlchemy models (User, Job)
+│   │   ├── processing.py  # Core pipeline (mapping, normalization)
+│   │   ├── routes_auth.py # Auth endpoints (register, login)
+│   │   ├── routes_jobs.py # Job endpoints (upload, status, download)
+│   │   ├── auth.py    # JWT helpers
+│   │   ├── db.py      # Database session
+│   │   ├── queue_rq.py    # Redis Queue config
+│   │   ├── storage.py # File storage helpers
+│   │   └── worker.py  # Background worker
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/          # Vanilla HTML frontend
+├── frontend-next/     # Next.js frontend (in development)
+└── docker-compose.yml # Postgres + Redis
 ```
 
-## Desenvolvimento Local
+## Setup Local
 
 ```bash
-# Instalar dependencias
+# 1. Copiar .env
+cp .env.example .env
+
+# 2. Subir Postgres e Redis
+docker compose up -d
+
+# 3. Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # ou venv\Scripts\activate no Windows
 pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 
-# Executar servidor
-python api_server.py
-
-# Servidor disponivel em http://localhost:5000
+# 4. Frontend Next.js
+cd frontend-next
+npm install
+npm run dev
 ```
 
----
+## Deploy
 
-**Desenvolvido por Triadeflow**
+Backend hospedado no Render (Docker).
+
+## Endpoints
+
+| Metodo | Rota | Descricao |
+|--------|------|-----------|
+| POST | /auth/register | Criar conta |
+| POST | /auth/login | Login (retorna JWT) |
+| POST | /jobs | Upload arquivo |
+| GET | /jobs | Listar jobs do usuario |
+| GET | /jobs/{id} | Status do job |
+| GET | /jobs/{id}/preview | Preview (20 linhas) |
+| GET | /jobs/{id}/report | Relatorio de metricas |
+| GET | /jobs/{id}/download | Download CSV GHL |
+| POST | /jobs/{id}/retry | Retry job falho |
+| GET | /health | Health check |
