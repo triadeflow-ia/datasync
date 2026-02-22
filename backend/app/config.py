@@ -27,8 +27,9 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 JWT_SECRET = os.getenv("JWT_SECRET", "altere-isso-em-producao-use-uma-string-longa-e-aleatoria")
 JWT_ALGORITHM = "HS256"
 
-# Rejeita qualquer fallback para SQLite ou banco em memória
-if "sqlite" in DATABASE_URL.lower() or ":memory:" in DATABASE_URL:
+# Rejeita qualquer fallback para SQLite ou banco em memória (exceto em testes)
+TESTING = os.getenv("TESTING", "").lower() in ("1", "true")
+if not TESTING and ("sqlite" in DATABASE_URL.lower() or ":memory:" in DATABASE_URL):
     raise ValueError(
         "DATABASE_URL não pode ser SQLite. Use Postgres. Exemplo: postgresql://ghluser:ghlpass@localhost:5432/ghldb"
     )

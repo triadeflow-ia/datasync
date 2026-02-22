@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
-from app.config import get_env_loaded_path
+from app.config import get_env_loaded_path, TESTING
 from app.db import Base, engine, get_db, get_driver_info, get_effective_url_masked, test_connection
 from app import models  # Registra as tabelas no Base antes de create_all
 from app.models import Job, User
@@ -31,19 +31,22 @@ async def lifespan(app: FastAPI):
     masked_url = get_effective_url_masked()
     driver = get_driver_info()
 
-    logger.info(f"[STARTUP] .env carregado de: {env_path or '(nenhum .env encontrado)'}")
-    logger.info(f"[STARTUP] DATABASE_URL (mascarada): {masked_url}")
-    logger.info(f"[STARTUP] Driver: {driver}")
+    if not TESTING:
+        logger.info(f"[STARTUP] .env carregado de: {env_path or '(nenhum .env encontrado)'}")
+        logger.info(f"[STARTUP] DATABASE_URL (mascarada): {masked_url}")
+        logger.info(f"[STARTUP] Driver: {driver}")
 
-    try:
-        conn_info = test_connection()
-        logger.info(f"[STARTUP] Postgres conectado: db={conn_info['current_database']} user={conn_info['current_user']}")
-    except Exception as e:
-        logger.error(f"[STARTUP] ERRO ao conectar no Postgres: {e}")
-        raise
+        try:
+            conn_info = test_connection()
+            logger.info(f"[STARTUP] Postgres conectado: db={conn_info['current_database']} user={conn_info['current_user']}")
+        except Exception as e:
+            logger.error(f"[STARTUP] ERRO ao conectar no Postgres: {e}")
+            raise
 
-    Base.metadata.create_all(bind=engine)
-    logger.info("[STARTUP] Tabelas criadas/verificadas (create_all)")
+        Base.metadata.create_all(bind=engine)
+        logger.info("[STARTUP] Tabelas criadas/verificadas (create_all)")
+    else:
+        logger.info("[STARTUP] Modo TESTING - skip Postgres check")
 
     yield
     # Ao desligar: nada especial por enquanto

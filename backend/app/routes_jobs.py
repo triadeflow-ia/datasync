@@ -1,4 +1,4 @@
-# Endpoints de jobs: upload, status, preview, download, report
+# Endpoints de jobs: upload, status, preview, download, report, delete
 import json
 import re
 import uuid
@@ -202,3 +202,39 @@ def retry_job(
         "status": job.status,
         "message": "Job enfileirado para reprocessamento",
     }
+
+
+@router.delete("/{job_id}", status_code=204)
+def delete_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Deleta um job e todos os arquivos associados (upload, CSV, report, preview).
+    Retorna 204 No Content em caso de sucesso.
+    """
+    job = _get_job_or_404(job_id, db, current_user)
+
+    # Cleanup de arquivos associados
+    files_to_delete = []
+    if job.file_path:
+        files_to_delete.append(Path(job.file_path))
+    if job.output_csv_path:
+        files_to_delete.append(Path(job.output_csv_path))
+    if job.report_json_path:
+        files_to_delete.append(Path(job.report_json_path))
+    # Preview file
+    preview_path = REPORTS_DIR / f"{job.id}_preview.json"
+    files_to_delete.append(preview_path)
+
+    for f in files_to_delete:
+        try:
+            if f.exists():
+                f.unlink()
+        except OSError:
+            pass  # Best-effort cleanup
+
+    db.delete(job)
+    db.commit()
+    return None
