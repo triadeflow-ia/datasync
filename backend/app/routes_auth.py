@@ -1,4 +1,5 @@
 # Endpoints de autenticação: registro e login
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,6 +10,7 @@ from app.auth import create_access_token, hash_password, verify_password
 from app.db import get_db
 from app.models import User
 
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -38,19 +40,25 @@ def register(
     Cria uma nova conta com email e senha.
     Retorna 400 se o email já existir.
     """
-    existing = db.query(User).filter(User.email == body.email.lower()).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
-    user = User(
-        id=str(uuid.uuid4()),
-        email=body.email.lower(),
-        password_hash=hash_password(body.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    token = create_access_token(user.id)
-    return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+    try:
+        existing = db.query(User).filter(User.email == body.email.lower()).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email já cadastrado")
+        user = User(
+            id=str(uuid.uuid4()),
+            email=body.email.lower(),
+            password_hash=hash_password(body.password),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        token = create_access_token(user.id)
+        return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[REGISTER] Erro: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {type(e).__name__}: {e}")
 
 
 @router.post("/login")
@@ -62,8 +70,14 @@ def login(
     Faz login com email e senha.
     Retorna token JWT se as credenciais forem válidas.
     """
-    user = db.query(User).filter(User.email == body.email.lower()).first()
-    if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
-    token = create_access_token(user.id)
-    return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+    try:
+        user = db.query(User).filter(User.email == body.email.lower()).first()
+        if not user or not verify_password(body.password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+        token = create_access_token(user.id)
+        return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[LOGIN] Erro: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {type(e).__name__}: {e}")
