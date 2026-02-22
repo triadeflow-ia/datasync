@@ -99,3 +99,136 @@ input, button {
   gap: 1rem;
 }
 .jobItem:last-child { border-bottom: none; }
+
+/* Drag & Drop active */
+.uploadZone.dragOver {
+  border-color: #3fb950;
+  background: rgba(63, 185, 80, 0.05);
+}
+
+/* Delete button */
+.btnDanger {
+  background: transparent;
+  color: #f85149;
+  border: 1px solid #f85149;
+  margin-left: 0.5rem;
+}
+.btnDanger:hover {
+  background: #f85149;
+  color: #fff;
+}
+
+/* Error message in job item */
+.jobError {
+  font-size: 0.8rem;
+  color: #f85149;
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modalContent {
+  background: #1a2332;
+  border: 1px solid #2d3a4d;
+  border-radius: 10px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.modalWide {
+  max-width: 90vw;
+}
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #2d3a4d;
+}
+.modalClose {
+  background: none;
+  border: none;
+  color: #8b949e;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.modalClose:hover {
+  color: #e6edf3;
+}
+.modalBody {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Preview table */
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.previewTable th,
+.previewTable td {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #2d3a4d;
+  text-align: left;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.previewTable th {
+  background: #0f1419;
+  color: #58a6ff;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+.previewTable tr:hover td {
+  background: rgba(88, 166, 255, 0.05);
+}
+
+/* Report metrics */
+.reportGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.reportMetric {
+  background: #0f1419;
+  border: 1px solid #2d3a4d;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+.reportMetric .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #58a6ff;
+}
+.reportMetric .label {
+  font-size: 0.85rem;
+  color: #8b949e;
+  margin-top: 0.25rem;
+}
+
+/* Confirm dialog */
+.confirmActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

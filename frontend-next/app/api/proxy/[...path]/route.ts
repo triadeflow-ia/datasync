@@ -62,6 +62,33 @@ export async function GET(
   }
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await params;
+  const url = getBackendUrl(path, request);
+  const headers = buildHeaders(request);
+  try {
+    const res = await fetch(url, { method: "DELETE", headers });
+    if (res.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+    const data = await res.text();
+    try {
+      const json = JSON.parse(data);
+      return NextResponse.json(json, { status: res.status });
+    } catch {
+      return new NextResponse(data, { status: res.status });
+    }
+  } catch (e) {
+    return NextResponse.json(
+      { detail: String(e) },
+      { status: 502 }
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }

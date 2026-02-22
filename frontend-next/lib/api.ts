@@ -127,6 +127,17 @@ export async function apiJobDownload(id: string, filename?: string) {
   URL.revokeObjectURL(url);
 }
 
+export async function apiJobDelete(id: string) {
+  const res = await fetch(`${PROXY}/jobs/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `Erro ${res.status}`);
+  }
+}
+
 export async function apiJobRetry(id: string) {
   const res = await fetch(`${PROXY}/jobs/${id}/retry`, {
     method: "POST",
