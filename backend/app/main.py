@@ -130,6 +130,17 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/health/db")
+def health_db():
+    """Verifica conexão com o banco de dados."""
+    try:
+        from app.db import test_connection
+        info = test_connection()
+        return {"status": "ok", "database": info["current_database"], "user": info["current_user"]}
+    except Exception as e:
+        return {"status": "error", "error": f"{type(e).__name__}: {e}"}
+
+
 if os.getenv("ENV", "development") != "production":
     @app.get("/debug/db")
     def debug_db():
